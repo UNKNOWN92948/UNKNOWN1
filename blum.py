@@ -386,6 +386,15 @@ def claim_game(token, game_id, points, user_agent=None):
             time.sleep(random.uniform(1, 2))  # Retry delay
     return 0
 
+def single_line_progress_bar(duration, message):
+    bar_length = 30
+    for percent in range(101):
+        filled_length = int(bar_length * percent // 100)
+        bar = '█' * filled_length + '▒' * (bar_length - filled_length)
+        print(f"\r{Fore.GREEN}[{bar}] {percent}%", end="")
+        time.sleep(duration / 100)
+    print(f"\r{message}" + " " * (bar_length + 10), end='\r')  # Clear line with message
+
 def auto_play_game(token, user_agent=None, game_points_min=121, game_points_max=210):
     total_reward = 0
     play_time = 32  # Play for 32 seconds
@@ -405,12 +414,8 @@ def auto_play_game(token, user_agent=None, game_points_min=121, game_points_max=
         
         game_id = play_game(token, user_agent=user_agent)
         if game_id:
-            # Live timer display during game play
-            for remaining in range(play_time, 0, -1):
-                mins, secs = divmod(remaining, 60)
-                print(f"{Fore.YELLOW + Style.BRIGHT}{mins:02}:{secs:02}{Style.RESET_ALL}", end='\r')
-                time.sleep(1)
-            print()  # Move to the next line after timer
+            # Replace the live timer display with a progress bar
+            single_line_progress_bar(play_time, f"{Fore.GREEN + Style.BRIGHT}Game play completed!{Style.RESET_ALL}")
 
             points = random.randint(game_points_min, game_points_max)
             reward = claim_game(token, game_id, points, user_agent=user_agent)
