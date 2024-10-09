@@ -581,13 +581,12 @@ def main():
             print(f"{Fore.GREEN + Style.BRIGHT}Previous Balance: {prev_balance}{Style.RESET_ALL}")
 
             try:
-                # Perform daily check-in at the beginning of all options
-            if not check_daily_reward_time():
-    print(f"{Fore.YELLOW + Style.BRIGHT}Daily check-in will work after 5:30 AM UTC.{Style.RESET_ALL}")
-else:
-    if get_daily_reward(token, user_agent=user_agent):
-        countdown_timer(random.randint(2, 3))
-
+    # Perform daily check-in at the beginning of all options
+    if not check_daily_reward_time():
+        print(f"{Fore.YELLOW + Style.BRIGHT}Daily check-in will work after 5:30 AM UTC.{Style.RESET_ALL}")
+    else:
+        if get_daily_reward(token, user_agent=user_agent):
+            countdown_timer(random.randint(2, 3))
                 if user_choice == '1':
                     if claim_farming(token, user_agent=user_agent):
                         countdown_timer(random.randint(2, 3))
