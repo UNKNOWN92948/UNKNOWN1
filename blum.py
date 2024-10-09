@@ -541,16 +541,12 @@ def main():
             continue
 
         start_account = input("Enter the Account no to start the process from: ").strip()
-        end_account = input("Enter the Account no to end the process at: ").strip()
-
         try:
             start_account = int(start_account) - 1
-            end_account = int(end_account)
         except ValueError:
             start_account = 0
-            end_account = len(query_ids)
 
-        for index in range(start_account, min(end_account, len(query_ids))):
+        for index in range(start_account, len(query_ids)):
             query_id = query_ids[index]
 
             if not query_id:
