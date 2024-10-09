@@ -367,8 +367,8 @@ def countdown_timer(seconds):
     print(' ' * 40, end='\r')
 
 def check_daily_reward_time():
-    current_time = datetime.now()
-    target_time = current_time.replace(hour=11, minute=0, second=0, microsecond=0)
+    current_time = datetime.utcnow()  # Use UTC
+    target_time = current_time.replace(hour=5, minute=30, second=0, microsecond=0)
     return current_time >= target_time
 
 def play_game(token, user_agent=None):
@@ -583,7 +583,7 @@ def main():
             try:
                 # Perform daily check-in at the beginning of all options
                 if not check_daily_reward_time():
-                    print(f"{Fore.YELLOW + Style.BRIGHT}Daily check-in will work after 11:00 AM.{Style.RESET_ALL}")
+                    print(f"{Fore.YELLOW + Style.BRIGHT}Daily check-in will work after 5:30 AM UTC.{Style.RESET_ALL}")
                 else:
                     if get_daily_reward(token, user_agent=user_agent):
                         countdown_timer(random.randint(2, 3))
