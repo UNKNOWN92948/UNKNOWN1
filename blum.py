@@ -76,17 +76,6 @@ def generate_fake_data(query_ids):
     save_fake_data(fake_data)
     return fake_data
 
-def get_fake_data(query_ids):
-    fake_data = load_fake_data()
-    if fake_data is None or len(fake_data) != len(query_ids):  # Ensure the length matches query_ids
-        fake_data = generate_fake_data(query_ids)
-    else:
-        update_needed = input("Need to update fake data information? (y/n): ").strip().lower() == 'y'
-        if update_needed:
-            fake_data = generate_fake_data(query_ids)
-            save_fake_data(fake_data)
-    return fake_data
-
 def get_headers(token, user_agent):
     return {
         "accept": "application/json, text/plain, */*",
@@ -507,50 +496,18 @@ def main():
         print(f"{Fore.CYAN + Style.BRIGHT}6. Game Point Settings{Style.RESET_ALL}")
         print(f"{Fore.CYAN + Style.BRIGHT}7. Exit Program{Style.RESET_ALL}")
         print(Fore.MAGENTA + Style.BRIGHT + "="*50 + Style.RESET_ALL)
-        user_choice = input("Enter your choice (1, 2, 3, 4, 5, 6, 7): ").strip()
-
-        if user_choice not in ['1', '2', '3', '4', '5', '6', '7']:
-            continue
-
-        if user_choice == '7':
-            exit_program()  # Exit the program gracefully
-
-        if user_choice == '6':
-            # Game Point Settings
-            try:
-                game_points_min = int(input("Enter minimum game points (default 121): ").strip())
-                game_points_max = int(input("Enter maximum game points (default 210, max 280): ").strip())
-                
-                if game_points_max > 280:
-                    print(f"{Fore.RED + Style.BRIGHT}Maximum game points cannot exceed 280! Setting to 280.{Style.RESET_ALL}")
-                    game_points_max = 280
-
-                if game_points_min < 0 or game_points_max < game_points_min:
-                    print(f"{Fore.RED + Style.BRIGHT}Invalid input for game points. Reverting to defaults.{Style.RESET_ALL}")
-                    game_points_min = 131
-                    game_points_max = 210
-
-                # Save the updated game points to a file
-                save_game_points(game_points_min, game_points_max)
-
-            except ValueError:
-                print(f"{Fore.RED + Style.BRIGHT}Invalid input! Reverting to default point settings.{Style.RESET_ALL}")
-                game_points_min = 131
-                game_points_max = 210
-
-            continue
 
         total_accounts = len(query_ids)
-account_range = input(f"Enter the Account numbers to process (1-{total_accounts} for accounts 1 to {total_accounts}): ").strip()
-try:
-    start_account, end_account = map(int, account_range.split(','))
-    start_account -= 1  # Adjust for zero indexing
-    end_account -= 1    # Adjust for zero indexing
-except ValueError:
-    start_account = 0
-    end_account = total_accounts - 1  # Default to process all accounts if input is invalid
+        account_range = input(f"Enter the Account numbers to process (1-{total_accounts} for accounts 1 to {total_accounts}): ").strip()
+        try:
+            start_account, end_account = map(int, account_range.split(','))
+            start_account -= 1  # Adjust for zero indexing
+            end_account -= 1    # Adjust for zero indexing
+        except ValueError:
+            start_account = 0
+            end_account = total_accounts - 1  # Default to process all accounts if input is invalid
 
-for index in range(start_account, min(end_account + 1, total_accounts)):
+        for index in range(start_account, min(end_account + 1, total_accounts)):
             query_id = query_ids[index]
 
             if not query_id:
