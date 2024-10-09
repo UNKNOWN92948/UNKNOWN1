@@ -573,24 +573,25 @@ def main():
                 time.sleep(random.uniform(1, 2))  # Retry delay
 
             if not token:
-                continue
+    continue
 
-            save_token(token, 'token.txt')
+save_token(token, 'token.txt')
 
-            prev_balance, _ = new_balance(token, user_agent=user_agent)
-            print(f"{Fore.GREEN + Style.BRIGHT}Previous Balance: {prev_balance}{Style.RESET_ALL}")
+prev_balance, _ = new_balance(token, user_agent=user_agent)
+print(f"{Fore.GREEN + Style.BRIGHT}Previous Balance: {prev_balance}{Style.RESET_ALL}")
 
-            try:
+try:
     # Perform daily check-in at the beginning of all options
     if not check_daily_reward_time():
         print(f"{Fore.YELLOW + Style.BRIGHT}Daily check-in will work after 5:30 AM UTC.{Style.RESET_ALL}")
     else:
         if get_daily_reward(token, user_agent=user_agent):
             countdown_timer(random.randint(2, 3))
-                if user_choice == '1':
-                    if claim_farming(token, user_agent=user_agent):
-                        countdown_timer(random.randint(2, 3))
-                    start_farming(token, user_agent=user_agent)
+
+    if user_choice == '1':
+        if claim_farming(token, user_agent=user_agent):
+            countdown_timer(random.randint(2, 3))
+        start_farming(token, user_agent=user_agent)
 
                     # Exclude tasks from new_task_names and predefined exclude_task_names
                     exclude_set = exclude_task_names_option1.union(new_task_names)
