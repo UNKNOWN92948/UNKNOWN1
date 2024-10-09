@@ -341,7 +341,7 @@ def save_token(token, file_path):
     except Exception as e:
         log_error(f"Error saving token: {e}")
 
-def save_game_points(min_points, max_points, file_path='game_points.txt'):
+def save_game_points(min_points, max_points, file_path='.game_points.txt'):
     try:
         with open(file_path, 'w') as file:
             file.write(f"{min_points},{max_points}")  # Save min and max points
@@ -349,7 +349,7 @@ def save_game_points(min_points, max_points, file_path='game_points.txt'):
     except Exception as e:
         log_error(f"Error saving game points: {e}")
 
-def load_game_points(file_path='game_points.txt'):
+def load_game_points(file_path='.game_points.txt'):
     try:
         with open(file_path, 'r') as file:
             min_points, max_points = map(int, file.read().strip().split(','))
