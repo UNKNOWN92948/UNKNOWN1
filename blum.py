@@ -573,7 +573,7 @@ def main():
                 time.sleep(random.uniform(1, 2))  # Retry delay
 
             if not token:
-    continue
+    continue  # This line is correctly indented
 
 save_token(token, 'token.txt')
 
