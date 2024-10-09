@@ -367,9 +367,9 @@ def countdown_timer(seconds):
     print(' ' * 40, end='\r')
 
 def check_daily_reward_time():
-    current_time = datetime.now()
-    target_time = current_time.replace(hour=11, minute=0, second=0, microsecond=0)
-    return current_time >= target_time
+    utc_now = datetime.utcnow()
+    target_time = utc_now.replace(hour=5, minute=30, second=0, microsecond=0)
+    return utc_now >= target_time
 
 def play_game(token, user_agent=None):
     url = "https://game-domain.blum.codes/api/v1/game/play"
