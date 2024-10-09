@@ -540,13 +540,17 @@ def main():
 
             continue
 
-        start_account = input("Enter the Account no to start the process from: ").strip()
-        try:
-            start_account = int(start_account) - 1
-        except ValueError:
-            start_account = 0
+        total_accounts = len(query_ids)
+account_range = input(f"Enter the Account numbers to process (1-{total_accounts} for accounts 1 to {total_accounts}): ").strip()
+try:
+    start_account, end_account = map(int, account_range.split(','))
+    start_account -= 1  # Adjust for zero indexing
+    end_account -= 1    # Adjust for zero indexing
+except ValueError:
+    start_account = 0
+    end_account = total_accounts - 1  # Default to process all accounts if input is invalid
 
-        for index in range(start_account, len(query_ids)):
+for index in range(start_account, min(end_account + 1, total_accounts)):
             query_id = query_ids[index]
 
             if not query_id:
