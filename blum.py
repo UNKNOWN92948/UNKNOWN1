@@ -516,30 +516,29 @@ def main():
             exit_program()  # Exit the program gracefully
 
         if user_choice == '6':
-        if user_choice == '6':
-    # Game Point Settings
-    try:
-        game_points_min = int(input("Enter minimum game points (default 121): ").strip())
-        game_points_max = int(input("Enter maximum game points (default 210, max 280): ").strip())
-        
-        if game_points_max > 280:
-            print(f"{Fore.RED + Style.BRIGHT}Maximum game points cannot exceed 280! Setting to 280.{Style.RESET_ALL}")
-            game_points_max = 280
+            # Game Point Settings
+            try:
+                game_points_min = int(input("Enter minimum game points (default 121): ").strip())
+                game_points_max = int(input("Enter maximum game points (default 210, max 280): ").strip())
+                
+                if game_points_max > 280:
+                    print(f"{Fore.RED + Style.BRIGHT}Maximum game points cannot exceed 280! Setting to 280.{Style.RESET_ALL}")
+                    game_points_max = 280
 
-        if game_points_min < 0 or game_points_max < game_points_min:
-            print(f"{Fore.RED + Style.BRIGHT}Invalid input for game points. Reverting to defaults.{Style.RESET_ALL}")
-            game_points_min = 121
-            game_points_max = 210
+                if game_points_min < 0 or game_points_max < game_points_min:
+                    print(f"{Fore.RED + Style.BRIGHT}Invalid input for game points. Reverting to defaults.{Style.RESET_ALL}")
+                    game_points_min = 121
+                    game_points_max = 210
 
-        # Save the updated game points to a file
-        save_game_points(game_points_min, game_points_max)
+                # Save the updated game points to a file
+                save_game_points(game_points_min, game_points_max)
 
-    except ValueError:
-        print(f"{Fore.RED + Style.BRIGHT}Invalid input! Reverting to default point settings.{Style.RESET_ALL}")
-        game_points_min = 121
-        game_points_max = 210
+            except ValueError:
+                print(f"{Fore.RED + Style.BRIGHT}Invalid input! Reverting to default point settings.{Style.RESET_ALL}")
+                game_points_min = 121
+                game_points_max = 210
 
-    continue
+            continue
 
         start_account = input("Enter the Account no to start the process from: ").strip()
         try:
