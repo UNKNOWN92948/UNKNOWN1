@@ -358,11 +358,6 @@ def load_game_points(file_path='game_points.txt'):
         print(f"{Fore.RED + Style.BRIGHT}Game points file not found or invalid format. Using default values.{Style.RESET_ALL}")
         return 121, 210  # Default values
 
-# Load game point settings at the start
-game_points_min, game_points_max = load_game_points()
-
-while True:
-
 def countdown_timer(seconds):
     for remaining in range(seconds, 0, -1):
         mins, secs = divmod(remaining, 60)
