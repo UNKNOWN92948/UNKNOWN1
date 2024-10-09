@@ -356,7 +356,7 @@ def load_game_points(file_path='.game_points.txt'):
             return min_points, max_points
     except (FileNotFoundError, ValueError):
         print(f"{Fore.RED + Style.BRIGHT}Game points file not found or invalid format. Using default values.{Style.RESET_ALL}")
-        return 121, 210  # Default values
+        return 131, 210  # Default values
 
 def countdown_timer(seconds):
     for remaining in range(seconds, 0, -1):
@@ -412,7 +412,7 @@ def single_line_progress_bar(duration, message):
         time.sleep(duration / 100)
     print(f"\r{message}" + " " * (bar_length + 10), end='\r')  # Clear line with message
 
-def auto_play_game(token, user_agent=None, game_points_min=121, game_points_max=210):
+def auto_play_game(token, user_agent=None, game_points_min=131, game_points_max=210):
     total_reward = 0
     play_time = 32  # Play for 32 seconds
 
@@ -527,7 +527,7 @@ def main():
 
                 if game_points_min < 0 or game_points_max < game_points_min:
                     print(f"{Fore.RED + Style.BRIGHT}Invalid input for game points. Reverting to defaults.{Style.RESET_ALL}")
-                    game_points_min = 121
+                    game_points_min = 131
                     game_points_max = 210
 
                 # Save the updated game points to a file
@@ -535,7 +535,7 @@ def main():
 
             except ValueError:
                 print(f"{Fore.RED + Style.BRIGHT}Invalid input! Reverting to default point settings.{Style.RESET_ALL}")
-                game_points_min = 121
+                game_points_min = 131
                 game_points_max = 210
 
             continue
