@@ -3,6 +3,7 @@ import json
 import time
 import os
 import random
+import threading
 from colorama import Fore, Style, init
 from datetime import datetime
 import signal
@@ -18,6 +19,9 @@ init(autoreset=True)
 ERROR_LOG_FILE = "error_log.txt"
 FAKE_DATA_FILE = "fake_data.json"
 GAME_POINTS_FILE = ".game_points.txt"
+
+# Create a lock for synchronized printing
+print_lock = threading.Lock()
 
 def log_error(message, account_no=None, username=None):
     error_message = f"{datetime.now()} - "
@@ -147,10 +151,12 @@ def claim_farming(token, user_agent=None):
         try:
             response = requests.post(url, headers=headers)
             if response.status_code == 200:
-                print(f"{Fore.GREEN + Style.BRIGHT}Farming Claimed Successfully [✓]{Style.RESET_ALL}")
+                with print_lock:  # Ensure print is thread-safe
+                    print(f"{Fore.GREEN + Style.BRIGHT}Farming Claimed Successfully [✓]{Style.RESET_ALL}")
                 return True
             elif response.status_code == 425:
-                print(f"{Fore.RED + Style.BRIGHT}Farming Already Claimed [✓]{Style.RESET_ALL}")
+                with print_lock:  # Ensure print is thread-safe
+                    print(f"{Fore.RED + Style.BRIGHT}Farming Already Claimed [✓]{Style.RESET_ALL}")
                 return False
         except requests.RequestException:
             time.sleep(2)  # Retry delay without showing logs
@@ -183,14 +189,16 @@ def start_farming(token, user_agent=None):
                 end_time = data.get("endTime", None)
                 if end_time:
                     end_date = datetime.fromtimestamp(end_time / 1000)
-                    print(f"{Fore.GREEN + Style.BRIGHT}Farming Successfully Started [✓]{Style.RESET_ALL}")
-                    print(f"{Fore.GREEN + Style.BRIGHT}End Farming: {end_date}{Style.RESET_ALL}")
+                    with print_lock:  # Ensure print is thread-safe
+                        print(f"{Fore.GREEN + Style.BRIGHT}Farming Successfully Started [✓]{Style.RESET_ALL}")
+                        print(f"{Fore.GREEN + Style.BRIGHT}End Farming: {end_date}{Style.RESET_ALL}")
                     return end_date
             except requests.RequestException as e:
                 log_error(f"Error starting farming on attempt {attempt+1}: {e}")
                 time.sleep(random.uniform(1, 2))  # Retry delay
     else:
-        print(f"{Fore.RED + Style.BRIGHT}Farming Already Started [✓]{Style.RESET_ALL}")
+        with print_lock:  # Ensure print is thread-safe
+            print(f"{Fore.RED + Style.BRIGHT}Farming Already Started [✓]{Style.RESET_ALL}")
     return None
 
 def get_daily_reward(token, user_agent=None):
@@ -202,23 +210,27 @@ def get_daily_reward(token, user_agent=None):
         try:
             response = requests.post(url, headers=headers)
             response.raise_for_status()
-            print(f"{Fore.GREEN + Style.BRIGHT}Daily Reward Claimed Successfully [✓]{Style.RESET_ALL}")
+            with print_lock:  # Ensure print is thread-safe
+                print(f"{Fore.GREEN + Style.BRIGHT}Daily Reward Claimed Successfully [✓]{Style.RESET_ALL}")
             return True
         except requests.HTTPError as e:
             if response.status_code == 400:
-                print(f"{Fore.RED + Style.BRIGHT}Daily Reward already claimed [✓]{Style.RESET_ALL}")
+                with print_lock:  # Ensure print is thread-safe
+                    print(f"{Fore.RED + Style.BRIGHT}Daily Reward already claimed [✓]{Style.RESET_ALL}")
                 return False
             log_error(f"Attempt {attempt+1}: Error claiming daily reward: {e}")
             time.sleep(random.uniform(1, 2))  # Retry delay
 
-    print(f"{Fore.RED + Style.BRIGHT}Failed to claim Daily Reward after {max_retries} attempts.{Style.RESET_ALL}")
+    with print_lock:  # Ensure print is thread-safe
+        print(f"{Fore.RED + Style.BRIGHT}Failed to claim Daily Reward after {max_retries} attempts.{Style.RESET_ALL}")
     return False
 
 def process_all_tasks(token, exclude_task_names, user_agent=None):
     try:
         earn_section = get_task(token=token, user_agent=user_agent)
         if not earn_section:
-            print(f"{Fore.RED + Style.BRIGHT}No tasks fetched. Exiting task processing.{Style.RESET_ALL}")
+            with print_lock:  # Ensure print is thread-safe
+                print(f"{Fore.RED + Style.BRIGHT}No tasks fetched. Exiting task processing.{Style.RESET_ALL}")
             return
 
         processed_ids = set()
@@ -254,7 +266,8 @@ def get_task_keywords(task_name_file, keyword_file):
 
 def process_task(token, task_id, task_name, task_status, task_keywords, user_agent=None, is_validation_required=False):
     if task_status == "FINISHED":
-        print(f"{Fore.RED + Style.BRIGHT}{task_name}: Already completed!{Style.RESET_ALL}")
+        with print_lock:  # Ensure print is thread-safe
+            print(f"{Fore.RED + Style.BRIGHT}{task_name}: Already completed!{Style.RESET_ALL}")
         return
     elif task_status == "NOT_STARTED":
         start_task(token, task_id, user_agent)
@@ -262,12 +275,14 @@ def process_task(token, task_id, task_name, task_status, task_keywords, user_age
     if task_status == "READY_FOR_CLAIM":
         claim_status = claim_task(token=token, task_id=task_id, user_agent=user_agent)
         if claim_status == "FINISHED":
-            print(f"{Fore.GREEN + Style.BRIGHT}{task_name}: Successfully claimed!{Style.RESET_ALL}")
+            with print_lock:  # Ensure print is thread-safe
+                print(f"{Fore.GREEN + Style.BRIGHT}{task_name}: Successfully claimed!{Style.RESET_ALL}")
     elif task_status == "READY_FOR_VERIFY":
         keyword = task_keywords.get(task_name)
         if is_validation_required and keyword:
             if validate_task(token, task_id, keyword, user_agent):
-                print(f"{Fore.GREEN + Style.BRIGHT}{task_name}: Successfully claimed!{Style.RESET_ALL}")
+                with print_lock:  # Ensure print is thread-safe
+                    print(f"{Fore.GREEN + Style.BRIGHT}{task_name}: Successfully claimed!{Style.RESET_ALL}")
 
 def start_task(token, task_id, user_agent=None):
     url = f"https://earn-domain.blum.codes/api/v1/tasks/{task_id}/start"
@@ -331,7 +346,8 @@ def clear_token_file(file_path):
     try:
         with open(file_path, 'w') as file:
             file.write('')
-        print(f"{Fore.GREEN + Style.BRIGHT}Token file cleared successfully.{Style.RESET_ALL}")
+        with print_lock:  # Ensure print is thread-safe
+            print(f"{Fore.GREEN + Style.BRIGHT}Token file cleared successfully.{Style.RESET_ALL}")
     except Exception as e:
         log_error(f"Error clearing token file: {e}")
 
@@ -346,7 +362,8 @@ def save_game_points(min_points, max_points, file_path=GAME_POINTS_FILE):
     try:
         with open(file_path, 'w') as file:
             file.write(f"{min_points},{max_points}")  # Save min and max points
-        print(f"{Fore.GREEN + Style.BRIGHT}Game points saved successfully.{Style.RESET_ALL}")
+        with print_lock:  # Ensure print is thread-safe
+            print(f"{Fore.GREEN + Style.BRIGHT}Game points saved successfully.{Style.RESET_ALL}")
     except Exception as e:
         log_error(f"Error saving game points: {e}")
 
@@ -356,7 +373,8 @@ def load_game_points(file_path=GAME_POINTS_FILE):
             min_points, max_points = map(int, file.read().strip().split(','))
             return min_points, max_points
     except (FileNotFoundError, ValueError):
-        print(f"{Fore.RED + Style.BRIGHT}Game points file not found or invalid format. Using default values.{Style.RESET_ALL}")
+        with print_lock:  # Ensure print is thread-safe
+            print(f"{Fore.RED + Style.BRIGHT}Game points file not found or invalid format. Using default values.{Style.RESET_ALL}")
         return 131, 210  # Default values
 
 def countdown_timer(seconds):
@@ -413,12 +431,9 @@ def single_line_progress_bar(duration, message):
         time.sleep(duration / 100)
     print(f"\r{message}" + " " * (bar_length + 10), end='\r')  # Clear line with message
 
-def auto_play_game(token, user_agent=None):
+def auto_play_game(token, user_agent=None, game_points_min=131, game_points_max=210):
     total_reward = 0
     play_time = 32  # Play for 32 seconds
-
-    # Load game points from file
-    game_points_min, game_points_max = load_game_points()
 
     while True:
         current_balance, play_passes = new_balance(token, user_agent=user_agent)
@@ -427,11 +442,13 @@ def auto_play_game(token, user_agent=None):
             break
 
         if play_passes == 0:
-            print(f"{Fore.RED + Style.BRIGHT}°Pass : 0, moving to next process.{Style.RESET_ALL}")
-            print(f"{Fore.GREEN + Style.BRIGHT}Total Reward: {total_reward}{Style.RESET_ALL}")
+            with print_lock:  # Ensure print is thread-safe
+                print(f"{Fore.RED + Style.BRIGHT}°Pass : 0, moving to next process.{Style.RESET_ALL}")
+                print(f"{Fore.GREEN + Style.BRIGHT}Total Reward: {total_reward}{Style.RESET_ALL}")
             break  # Skip to next process if no play passes
 
-        print(f"{Fore.YELLOW + Style.BRIGHT}Playing Game.....°Pass: {play_passes}{Style.RESET_ALL}")
+        with print_lock:  # Ensure print is thread-safe
+            print(f"{Fore.YELLOW + Style.BRIGHT}Playing Game.....°Pass: {play_passes}{Style.RESET_ALL}")
         
         game_id = play_game(token, user_agent=user_agent)
         if game_id:
@@ -443,12 +460,14 @@ def auto_play_game(token, user_agent=None):
             total_reward += reward
             
             # Show claimed points after game ends
-            print(f"{Fore.GREEN + Style.BRIGHT}Successfully claimed {points} points [✓]{Style.RESET_ALL}")
+            with print_lock:  # Ensure print is thread-safe
+                print(f"{Fore.GREEN + Style.BRIGHT}Successfully claimed {points} points [✓]{Style.RESET_ALL}")
 
             # Wait 3 to 7 seconds before starting a new game play
             wait_time = random.randint(3, 7)
             for remaining in range(wait_time, 0, -1):
-                print(f"{Fore.CYAN + Style.BRIGHT}Waiting...⌛ {remaining} seconds{Style.RESET_ALL}", end='\r')
+                with print_lock:  # Ensure print is thread-safe
+                    print(f"{Fore.CYAN + Style.BRIGHT}Waiting...⌛ {remaining} seconds{Style.RESET_ALL}", end='\r')
                 time.sleep(1)
             print(' ' * 40, end='\r')
 
@@ -463,6 +482,57 @@ def art():
     """ + Style.RESET_ALL)
 
     print(Fore.CYAN + Style.BRIGHT + "Blum Script Edited by @Dhiraj_9619 💫 DHEERAJ" + Style.RESET_ALL)
+
+def auto_play_game_threaded(query_ids, fake_data, start_account, game_points_min=131, game_points_max=210):
+    def play_game_for_account(index, query_id, user_agent):
+        username = parse_username_from_query(query_id)
+
+        with print_lock:  # Ensure print is thread-safe
+            print(f"{Fore.CYAN + Style.BRIGHT}--- Account No. {index + 1} ---{Style.RESET_ALL}")
+            print(f"{Fore.CYAN + Style.BRIGHT}Username: {username}{Style.RESET_ALL}")
+
+        # Extract and display browser and OS info
+        browser_info, os_info = extract_browser_info(user_agent)
+        with print_lock:  # Ensure print is thread-safe
+            print(f"{Fore.MAGENTA + Style.BRIGHT}{browser_info}, {os_info}{Style.RESET_ALL}")
+
+        token = None
+        for attempt in range(3):
+            token = get_new_token(query_id, user_agent=user_agent)
+            if token:
+                break
+            log_error(f"Token generation failed on attempt {attempt+1}", index + 1, username)
+            time.sleep(random.uniform(1, 2))  # Retry delay
+
+        if not token:
+            return
+
+        save_token(token, 'token.txt')
+
+        prev_balance, _ = new_balance(token, user_agent=user_agent)
+        with print_lock:  # Ensure print is thread-safe
+            print(f"{Fore.GREEN + Style.BRIGHT}Previous Balance: {prev_balance}{Style.RESET_ALL}")
+
+        auto_play_game(token, user_agent=user_agent, game_points_min=game_points_min, game_points_max=game_points_max)
+
+        updated_balance, _ = new_balance(token, user_agent=user_agent)
+        with print_lock:  # Ensure print is thread-safe
+            print(f"{Fore.GREEN + Style.BRIGHT}Final Balance: {updated_balance}{Style.RESET_ALL}")
+
+    threads = []
+    for index in range(start_account, len(query_ids)):
+        query_id = query_ids[index]
+        if not query_id:
+            log_error("Query ID not found.", index + 1)
+            continue
+
+        user_agent = fake_data[index]['user_agent']
+        thread = threading.Thread(target=play_game_for_account, args=(index, query_id, user_agent))
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)  # Handle Ctrl+C to exit gracefully
@@ -525,11 +595,13 @@ def main():
                 game_points_max = int(input("Enter maximum game points (default 210, max 280): ").strip())
                 
                 if game_points_max > 280:
-                    print(f"{Fore.RED + Style.BRIGHT}Maximum game points cannot exceed 280! Setting to 280.{Style.RESET_ALL}")
+                    with print_lock:  # Ensure print is thread-safe
+                        print(f"{Fore.RED + Style.BRIGHT}Maximum game points cannot exceed 280! Setting to 280.{Style.RESET_ALL}")
                     game_points_max = 280
 
                 if game_points_min < 0 or game_points_max < game_points_min:
-                    print(f"{Fore.RED + Style.BRIGHT}Invalid input for game points. Reverting to defaults.{Style.RESET_ALL}")
+                    with print_lock:  # Ensure print is thread-safe
+                        print(f"{Fore.RED + Style.BRIGHT}Invalid input for game points. Reverting to defaults.{Style.RESET_ALL}")
                     game_points_min = 131
                     game_points_max = 210
 
@@ -537,7 +609,8 @@ def main():
                 save_game_points(game_points_min, game_points_max)
 
             except ValueError:
-                print(f"{Fore.RED + Style.BRIGHT}Invalid input! Reverting to default point settings.{Style.RESET_ALL}")
+                with print_lock:  # Ensure print is thread-safe
+                    print(f"{Fore.RED + Style.BRIGHT}Invalid input! Reverting to default point settings.{Style.RESET_ALL}")
                 game_points_min = 131
                 game_points_max = 210
 
@@ -549,6 +622,13 @@ def main():
         except ValueError:
             start_account = 0
 
+        # Prompt user to activate multithreading for game play
+        if user_choice == '3':
+            use_multithreading = input("Do you want to activate multi-threaded game play? (y/n): ").strip().lower() == 'y'
+            if use_multithreading:
+                auto_play_game_threaded(query_ids, fake_data, start_account, game_points_min, game_points_max)
+                continue
+
         for index in range(start_account, len(query_ids)):
             query_id = query_ids[index]
 
@@ -558,14 +638,16 @@ def main():
 
             username = parse_username_from_query(query_id)
 
-            print(f"{Fore.CYAN + Style.BRIGHT}--- Account No. {index + 1} ---{Style.RESET_ALL}")
-            print(f"{Fore.CYAN + Style.BRIGHT}Username: {username}{Style.RESET_ALL}")
+            with print_lock:  # Ensure print is thread-safe
+                print(f"{Fore.CYAN + Style.BRIGHT}--- Account No. {index + 1} ---{Style.RESET_ALL}")
+                print(f"{Fore.CYAN + Style.BRIGHT}Username: {username}{Style.RESET_ALL}")
 
             user_agent = fake_data[index]['user_agent']
 
             # Extract and display browser and OS info
             browser_info, os_info = extract_browser_info(user_agent)
-            print(f"{Fore.MAGENTA + Style.BRIGHT}{browser_info}, {os_info}{Style.RESET_ALL}")
+            with print_lock:  # Ensure print is thread-safe
+                print(f"{Fore.MAGENTA + Style.BRIGHT}{browser_info}, {os_info}{Style.RESET_ALL}")
 
             token = None
             for attempt in range(3):
@@ -581,12 +663,14 @@ def main():
             save_token(token, 'token.txt')
 
             prev_balance, _ = new_balance(token, user_agent=user_agent)
-            print(f"{Fore.GREEN + Style.BRIGHT}Previous Balance: {prev_balance}{Style.RESET_ALL}")
+            with print_lock:  # Ensure print is thread-safe
+                print(f"{Fore.GREEN + Style.BRIGHT}Previous Balance: {prev_balance}{Style.RESET_ALL}")
 
             try:
                 # Perform daily check-in at the beginning of all options
                 if not check_daily_reward_time():
-                    print(f"{Fore.YELLOW + Style.BRIGHT}Daily check-in will work after 5:30 AM UTC.{Style.RESET_ALL}")
+                    with print_lock:  # Ensure print is thread-safe
+                        print(f"{Fore.YELLOW + Style.BRIGHT}Daily check-in will work after 5:30 AM UTC.{Style.RESET_ALL}")
                 else:
                     if get_daily_reward(token, user_agent=user_agent):
                         countdown_timer(random.randint(2, 3))
@@ -603,7 +687,7 @@ def main():
                     # Automatically continue with Options 4, 5, and 3
                     process_tasks_by_id(token, task_ids_for_earn_checking_social, user_agent=user_agent)
                     process_new_tasks_only(token, user_agent, new_task_names)
-                    auto_play_game(token, user_agent=user_agent)
+                    auto_play_game(token, user_agent=user_agent, game_points_min=game_points_min, game_points_max=game_points_max)
 
                 if user_choice == '2':
                     if claim_farming(token, user_agent=user_agent):
@@ -611,7 +695,7 @@ def main():
                     start_farming(token, user_agent=user_agent)
 
                 if user_choice == '3':  # Auto Play Game Logic
-                    auto_play_game(token, user_agent=user_agent)
+                    auto_play_game(token, user_agent=user_agent, game_points_min=game_points_min, game_points_max=game_points_max)
 
                 if user_choice == '4':  # Earn for Checking Social Tasks
                     process_tasks_by_id(token, task_ids_for_earn_checking_social, user_agent=user_agent)
@@ -625,7 +709,8 @@ def main():
 
             finally:
                 updated_balance, _ = new_balance(token, user_agent=user_agent)
-                print(f"{Fore.GREEN + Style.BRIGHT}Final Balance: {updated_balance}{Style.RESET_ALL}")
+                with print_lock:  # Ensure print is thread-safe
+                    print(f"{Fore.GREEN + Style.BRIGHT}Final Balance: {updated_balance}{Style.RESET_ALL}")
 
                 if updated_balance is not None:
                     total_balance += float(updated_balance or 0)
@@ -636,7 +721,8 @@ def main():
                 # Add a blank line after processing each account
                 print()
 
-        print(f"{Fore.YELLOW + Style.BRIGHT}Total Balance of all accounts: {total_balance}{Style.RESET_ALL}")
+        with print_lock:  # Ensure print is thread-safe
+            print(f"{Fore.YELLOW + Style.BRIGHT}Total Balance of all accounts: {total_balance}{Style.RESET_ALL}")
 
         clear_token_file('token.txt')
 
@@ -644,7 +730,8 @@ def process_tasks_by_id(token, task_ids, user_agent=None):
     try:
         earn_section = get_task(token=token, user_agent=user_agent)
         if not earn_section:
-            print(f"{Fore.RED + Style.BRIGHT}No tasks fetched. Exiting task processing.{Style.RESET_ALL}")
+            with print_lock:  # Ensure print is thread-safe
+                print(f"{Fore.RED + Style.BRIGHT}No tasks fetched. Exiting task processing.{Style.RESET_ALL}")
             return
 
         processed_ids = set()
@@ -666,7 +753,8 @@ def process_tasks_by_id(token, task_ids, user_agent=None):
 
 def start_and_claim_task(token, task_id, task_status, user_agent=None):
     if task_status == "FINISHED":
-        print(f"{Fore.RED + Style.BRIGHT}Task ID {task_id}: Already completed!{Style.RESET_ALL}")
+        with print_lock:  # Ensure print is thread-safe
+            print(f"{Fore.RED + Style.BRIGHT}Task ID {task_id}: Already completed!{Style.RESET_ALL}")
         return False
     elif task_status == "NOT_STARTED":
         start_task(token, task_id, user_agent)
@@ -674,7 +762,8 @@ def start_and_claim_task(token, task_id, task_status, user_agent=None):
     if task_status == "READY_FOR_CLAIM":
         claim_status = claim_task(token=token, task_id=task_id, user_agent=user_agent)
         if claim_status == "FINISHED":
-            print(f"{Fore.GREEN + Style.BRIGHT}Task ID {task_id}: Successfully claimed!{Style.RESET_ALL}")
+            with print_lock:  # Ensure print is thread-safe
+                print(f"{Fore.GREEN + Style.BRIGHT}Task ID {task_id}: Successfully claimed!{Style.RESET_ALL}")
             return True
     return False
 
@@ -682,7 +771,8 @@ def process_new_tasks_only(token, user_agent=None, new_task_names=set()):
     try:
         earn_section = get_task(token=token, user_agent=user_agent)
         if not earn_section:
-            print(f"{Fore.RED + Style.BRIGHT}No tasks fetched. Exiting task processing.{Style.RESET_ALL}")
+            with print_lock:  # Ensure print is thread-safe
+                print(f"{Fore.RED + Style.BRIGHT}No tasks fetched. Exiting task processing.{Style.RESET_ALL}")
             return
 
         processed_ids = set()  # Set to track processed task IDs
