@@ -356,7 +356,7 @@ def load_game_points(file_path=GAME_POINTS_FILE):
             min_points, max_points = map(int, file.read().strip().split(','))
             return min_points, max_points
     except (FileNotFoundError, ValueError):
-        print(f"{Fore.RED + Style.BRIGHT}Game points file not found or invalid format. Using default values.{Style.RESET_ALL}")
+        # Return default values silently without printing any message
         return 131, 210  # Default values
 
 def countdown_timer(seconds):
