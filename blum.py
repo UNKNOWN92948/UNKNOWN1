@@ -17,6 +17,7 @@ init(autoreset=True)
 
 ERROR_LOG_FILE = "error_log.txt"
 FAKE_DATA_FILE = "fake_data.json"
+GAME_POINTS_FILE = ".game_points.txt"
 
 def log_error(message, account_no=None, username=None):
     error_message = f"{datetime.now()} - "
@@ -341,7 +342,7 @@ def save_token(token, file_path):
     except Exception as e:
         log_error(f"Error saving token: {e}")
 
-def save_game_points(min_points, max_points, file_path='.game_points.txt'):
+def save_game_points(min_points, max_points, file_path=GAME_POINTS_FILE):
     try:
         with open(file_path, 'w') as file:
             file.write(f"{min_points},{max_points}")  # Save min and max points
@@ -349,7 +350,7 @@ def save_game_points(min_points, max_points, file_path='.game_points.txt'):
     except Exception as e:
         log_error(f"Error saving game points: {e}")
 
-def load_game_points(file_path='.game_points.txt'):
+def load_game_points(file_path=GAME_POINTS_FILE):
     try:
         with open(file_path, 'r') as file:
             min_points, max_points = map(int, file.read().strip().split(','))
@@ -412,9 +413,12 @@ def single_line_progress_bar(duration, message):
         time.sleep(duration / 100)
     print(f"\r{message}" + " " * (bar_length + 10), end='\r')  # Clear line with message
 
-def auto_play_game(token, user_agent=None, game_points_min=131, game_points_max=210):
+def auto_play_game(token, user_agent=None):
     total_reward = 0
     play_time = 32  # Play for 32 seconds
+
+    # Load game points from file
+    game_points_min, game_points_max = load_game_points()
 
     while True:
         current_balance, play_passes = new_balance(token, user_agent=user_agent)
@@ -491,8 +495,7 @@ def main():
         new_task_names = {line.strip() for line in new_task_file}
 
     # Default game points
-    game_points_min = 131
-    game_points_max = 210
+    game_points_min, game_points_max = load_game_points()
 
     while True:
         total_balance = 0.0
@@ -600,7 +603,7 @@ def main():
                     # Automatically continue with Options 4, 5, and 3
                     process_tasks_by_id(token, task_ids_for_earn_checking_social, user_agent=user_agent)
                     process_new_tasks_only(token, user_agent, new_task_names)
-                    auto_play_game(token, user_agent=user_agent, game_points_min=game_points_min, game_points_max=game_points_max)
+                    auto_play_game(token, user_agent=user_agent)
 
                 if user_choice == '2':
                     if claim_farming(token, user_agent=user_agent):
@@ -608,7 +611,7 @@ def main():
                     start_farming(token, user_agent=user_agent)
 
                 if user_choice == '3':  # Auto Play Game Logic
-                    auto_play_game(token, user_agent=user_agent, game_points_min=game_points_min, game_points_max=game_points_max)
+                    auto_play_game(token, user_agent=user_agent)
 
                 if user_choice == '4':  # Earn for Checking Social Tasks
                     process_tasks_by_id(token, task_ids_for_earn_checking_social, user_agent=user_agent)
