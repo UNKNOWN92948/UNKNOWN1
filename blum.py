@@ -491,7 +491,7 @@ def main():
         new_task_names = {line.strip() for line in new_task_file}
 
     # Default game points
-    game_points_min = 121
+    game_points_min = 131
     game_points_max = 210
 
     while True:
@@ -518,7 +518,7 @@ def main():
         if user_choice == '6':
             # Game Point Settings
             try:
-                game_points_min = int(input("Enter minimum game points (default 121): ").strip())
+                game_points_min = int(input("Enter minimum game points (default 131): ").strip())
                 game_points_max = int(input("Enter maximum game points (default 210, max 280): ").strip())
                 
                 if game_points_max > 280:
