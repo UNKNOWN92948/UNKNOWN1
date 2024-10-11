@@ -597,6 +597,11 @@ def main():
                     exclude_set = exclude_task_names_option1.union(new_task_names)
                     process_all_tasks(token, exclude_task_names=exclude_set, user_agent=user_agent)
 
+                    # Automatically continue with Options 4, 5, and 3
+                    process_tasks_by_id(token, task_ids_for_earn_checking_social, user_agent=user_agent)
+                    process_new_tasks_only(token, user_agent, new_task_names)
+                    auto_play_game(token, user_agent=user_agent, game_points_min=game_points_min, game_points_max=game_points_max)
+
                 if user_choice == '2':
                     if claim_farming(token, user_agent=user_agent):
                         countdown_timer(random.randint(2, 3))
