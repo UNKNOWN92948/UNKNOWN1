@@ -91,8 +91,17 @@ def get_fake_data(query_ids):
 def get_headers(token, user_agent):
     return {
         "accept": "application/json, text/plain, */*",
+        "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
         "authorization": f"Bearer {token}",
-        "User-Agent": user_agent
+        "lang": "en",
+        "origin": "https://telegram.blum.codes",
+        "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Chromium\";v=\"124\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"Android\"",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site",
+        "User-Agent": user_agent or "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     }
 
 def extract_browser_info(user_agent):
@@ -373,7 +382,7 @@ def check_daily_reward_time():
     return current_time >= target_time
 
 def play_game(token, user_agent=None):
-    url = "https://game-domain.blum.codes/api/v1/game/play"
+    url = "https://game-domain.blum.codes/api/v2/game/play"
     headers = get_headers(token, user_agent)
     max_retries = 3
     for attempt in range(max_retries):
@@ -390,7 +399,7 @@ def play_game(token, user_agent=None):
     return None
 
 def claim_game(token, game_id, points, user_agent=None):
-    url = "https://game-domain.blum.codes/api/v1/game/claim"
+    url = "https://game-domain.blum.codes/api/v2/game/claim"
     headers = get_headers(token, user_agent)
     body = {"gameId": game_id, "points": points}
     max_retries = 3
