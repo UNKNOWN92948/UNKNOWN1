@@ -382,7 +382,7 @@ def check_daily_reward_time():
     return current_time >= target_time
 
 def play_game(token, user_agent=None):
-    url = "https://game-domain.blum.codes/api/v2/game/play"
+    url = "https://game-domain.blum.codes/api/v1/game/play"
     headers = get_headers(token, user_agent)
     max_retries = 3
     for attempt in range(max_retries):
@@ -399,7 +399,7 @@ def play_game(token, user_agent=None):
     return None
 
 def claim_game(token, game_id, points, user_agent=None):
-    url = "https://game-domain.blum.codes/api/v2/game/claim"
+    url = "https://game-domain.blum.codes/api/v1/game/claim"
     headers = get_headers(token, user_agent)
     body = {"gameId": game_id, "points": points}
     max_retries = 3
