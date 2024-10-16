@@ -4,7 +4,7 @@ import time
 import os
 import random
 from colorama import Fore, Style, init
-from datetime import datetime
+from datetime import datetime, timezone
 import signal
 import sys
 import re
@@ -340,7 +340,6 @@ def clear_token_file(file_path):
     try:
         with open(file_path, 'w') as file:
             file.write('')
-        print(f"{Fore.GREEN + Style.BRIGHT}Token file cleared successfully.{Style.RESET_ALL}")
     except Exception as e:
         log_error(f"Error clearing token file: {e}")
 
@@ -377,7 +376,7 @@ def countdown_timer(seconds):
     print(' ' * 40, end='\r')
 
 def check_daily_reward_time():
-    current_time = datetime.utcnow()  # Use UTC
+    current_time = datetime.now(timezone.utc)  # Use UTC
     target_time = current_time.replace(hour=5, minute=30, second=0, microsecond=0)
     return current_time >= target_time
 
@@ -655,6 +654,16 @@ def main():
         print(f"{Fore.YELLOW + Style.BRIGHT}Total Balance of all accounts: {total_balance}{Style.RESET_ALL}")
 
         clear_token_file('token.txt')
+
+        if user_choice in ['1', '2']:
+            # Add random live timer for next cycle
+            wait_hours = random.uniform(8.5, 9)  # Random wait between 8.5 to 9 hours
+            wait_seconds = int(wait_hours * 3600)
+            hours, remainder = divmod(wait_seconds, 3600)
+            minutes, _ = divmod(remainder, 60)
+
+            print(f"{Fore.YELLOW + Style.BRIGHT}Waiting for {hours} hours and {minutes} minutes before the next cycle...{Style.RESET_ALL}")
+            countdown_timer(wait_seconds)
 
 def process_tasks_by_id(token, task_ids, user_agent=None):
     try:
