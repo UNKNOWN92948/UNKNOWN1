@@ -645,8 +645,9 @@ def main():
                 if updated_balance is not None:
                     total_balance += float(updated_balance or 0)
 
-                # Wait for 2-3 seconds before processing the next account
-                countdown_timer(random.randint(2, 3))
+                # Wait for 3-5 seconds with a live timer before processing the next account
+                random_wait_time = random.randint(3, 5)
+                countdown_timer(random_wait_time)
 
                 # Add a blank line after processing each account
                 print()
