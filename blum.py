@@ -384,20 +384,8 @@ def check_daily_reward_time():
     return current_time >= target_time
 
 def play_game(token, user_agent=None):
-    url = "https://game-domain.blum.codes/api/v1/game/play"
-    headers = get_headers(token, user_agent)
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            response = requests.post(url, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-            game_id = data.get("gameId")
-            if game_id:
-                return game_id
-        except requests.RequestException as e:
-            log_error(f"Error starting game on attempt {attempt+1}: {e}")
-            time.sleep(random.uniform(1, 2))  # Retry delay
+    # This function is disabled.
+    print(f"{Fore.YELLOW + Style.BRIGHT}Note: Game play disabled.{Style.RESET_ALL}")
     return None
 
 def claim_game(token, game_id, points, user_agent=None):
@@ -425,43 +413,8 @@ def single_line_progress_bar(duration, message):
     print(f"\r{message}" + " " * (bar_length + 10), end='\r')  # Clear line with message
 
 def auto_play_game(token, user_agent=None):
-    total_reward = 0
-    play_time = 32  # Play for 32 seconds
-
-    # Load game points from file
-    game_points_min, game_points_max = load_game_points()
-
-    while True:
-        current_balance, play_passes = new_balance(token, user_agent=user_agent)
-        if current_balance is None or play_passes is None:
-            log_error("Failed to retrieve balance or play passes.")
-            break
-
-        if play_passes == 0:
-            print(f"{Fore.RED + Style.BRIGHT}°Pass : 0, moving to next process.{Style.RESET_ALL}")
-            print(f"{Fore.GREEN + Style.BRIGHT}Total Reward: {total_reward}{Style.RESET_ALL}")
-            break  # Skip to next process if no play passes
-
-        print(f"{Fore.YELLOW + Style.BRIGHT}Playing Game.....°Pass: {play_passes}{Style.RESET_ALL}")
-        
-        game_id = play_game(token, user_agent=user_agent)
-        if game_id:
-            # Replace the live timer display with a progress bar
-            single_line_progress_bar(play_time, f"{Fore.GREEN + Style.BRIGHT}Game play completed!{Style.RESET_ALL}")
-
-            points = random.randint(game_points_min, game_points_max)
-            reward = claim_game(token, game_id, points, user_agent=user_agent)
-            total_reward += reward
-            
-            # Show claimed points after game ends
-            print(f"{Fore.GREEN + Style.BRIGHT}Successfully claimed {points} points [✓]{Style.RESET_ALL}")
-
-            # Wait 3 to 7 seconds before starting a new game play
-            wait_time = random.randint(3, 7)
-            for remaining in range(wait_time, 0, -1):
-                print(f"{Fore.CYAN + Style.BRIGHT}Waiting...⌛ {remaining} seconds{Style.RESET_ALL}", end='\r')
-                time.sleep(1)
-            print(' ' * 40, end='\r')
+    # This function is disabled.
+    print(f"{Fore.YELLOW + Style.BRIGHT}Note: Game play disabled.{Style.RESET_ALL}")
 
 def art():
     print(Fore.GREEN + Style.BRIGHT + r"""
@@ -628,7 +581,7 @@ def main():
                     start_farming(token, user_agent=user_agent)
 
                 if user_choice == '3':  # Auto Play Game Logic
-                    auto_play_game(token, user_agent=user_agent)
+                    print(f"{Fore.YELLOW + Style.BRIGHT}Note: Game play disabled.{Style.RESET_ALL}")
 
                 if user_choice == '4':  # Earn for Checking Social Tasks
                     process_tasks_by_id(token, task_ids_for_earn_checking_social, user_agent=user_agent)
