@@ -4,7 +4,7 @@ import time
 import os
 import random
 from colorama import Fore, Style, init
-from datetime import datetime, timezone
+from datetime import datetime
 import signal
 import sys
 import re
@@ -17,7 +17,6 @@ init(autoreset=True)
 
 ERROR_LOG_FILE = "error_log.txt"
 FAKE_DATA_FILE = "fake_data.json"
-GAME_POINTS_FILE = ".game_points.txt"
 
 def log_error(message, account_no=None, username=None):
     error_message = f"{datetime.now()} - "
@@ -91,17 +90,8 @@ def get_fake_data(query_ids):
 def get_headers(token, user_agent):
     return {
         "accept": "application/json, text/plain, */*",
-        "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
         "authorization": f"Bearer {token}",
-        "lang": "en",
-        "origin": "https://telegram.blum.codes",
-        "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Chromium\";v=\"124\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"Android\"",
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-site",
-        "User-Agent": user_agent or "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        "User-Agent": user_agent
     }
 
 def extract_browser_info(user_agent):
@@ -223,7 +213,6 @@ def get_daily_reward(token, user_agent=None):
     print(f"{Fore.RED + Style.BRIGHT}Failed to claim Daily Reward after {max_retries} attempts.{Style.RESET_ALL}")
     return False
 
-# Replaced part of the second script for option 1 (All Tasks)
 def process_all_tasks(token, exclude_task_names, user_agent=None):
     try:
         earn_section = get_task(token=token, user_agent=user_agent)
@@ -244,8 +233,6 @@ def process_all_tasks(token, exclude_task_names, user_agent=None):
                             task_status = sub_task["status"]
                             process_task(token, task_id, task_name, task_status, {}, user_agent, False)
                             processed_ids.add(task_id)
-                            # Add a random timer of 2-3 seconds after each claim
-                            countdown_timer(random.randint(2, 3))
     except Exception as e:
         log_error(f"Error processing all tasks: {e}")
 
@@ -343,6 +330,7 @@ def clear_token_file(file_path):
     try:
         with open(file_path, 'w') as file:
             file.write('')
+        print(f"{Fore.GREEN + Style.BRIGHT}Token file cleared successfully.{Style.RESET_ALL}")
     except Exception as e:
         log_error(f"Error clearing token file: {e}")
 
@@ -353,7 +341,7 @@ def save_token(token, file_path):
     except Exception as e:
         log_error(f"Error saving token: {e}")
 
-def save_game_points(min_points, max_points, file_path=GAME_POINTS_FILE):
+def save_game_points(min_points, max_points, file_path='.game_points.txt'):
     try:
         with open(file_path, 'w') as file:
             file.write(f"{min_points},{max_points}")  # Save min and max points
@@ -361,13 +349,13 @@ def save_game_points(min_points, max_points, file_path=GAME_POINTS_FILE):
     except Exception as e:
         log_error(f"Error saving game points: {e}")
 
-def load_game_points(file_path=GAME_POINTS_FILE):
+def load_game_points(file_path='.game_points.txt'):
     try:
         with open(file_path, 'r') as file:
             min_points, max_points = map(int, file.read().strip().split(','))
             return min_points, max_points
     except (FileNotFoundError, ValueError):
-        # Return default values silently without printing any message
+        print(f"{Fore.RED + Style.BRIGHT}Game points file not found or invalid format. Using default values.{Style.RESET_ALL}")
         return 131, 210  # Default values
 
 def countdown_timer(seconds):
@@ -378,20 +366,66 @@ def countdown_timer(seconds):
         time.sleep(1)
     print(' ' * 40, end='\r')
 
+def live_timer(seconds):
+    for remaining in range(seconds, 0, -1):
+        print(f"{Fore.CYAN + Style.BRIGHT}Waiting... {remaining} seconds{Style.RESET_ALL}", end='\r')
+        time.sleep(1)
+    print(' ' * 40, end='\r')
+
 def check_daily_reward_time():
-    current_time = datetime.now(timezone.utc)  # Use UTC
-    target_time = current_time.replace(hour=5, minute=30, second=0, microsecond=0)
+    current_time = datetime.now()
+    target_time = current_time.replace(hour=11, minute=0, second=0, microsecond=0)
     return current_time >= target_time
 
 def play_game(token, user_agent=None):
-    # This function is disabled.
-    print(f"{Fore.YELLOW + Style.BRIGHT}Note: Game play disabled.{Style.RESET_ALL}")
+    url = "https://game-domain.blum.codes/api/v2/game/play"  # Changed to v2
+    headers = get_headers(token, user_agent)
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(url, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            game_id = data.get("gameId")
+            if game_id:
+                return game_id
+        except requests.RequestException as e:
+            log_error(f"Error starting game on attempt {attempt+1}: {e}")
+            time.sleep(random.uniform(1, 2))  # Retry delay
     return None
 
-def claim_game(token, game_id, points, user_agent=None):
-    url = "https://game-domain.blum.codes/api/v1/game/claim"
+# New function to create payload for claim_game
+def create_payload(game_id, points, dogs):
+    data = get_data_payload()
+    payload_server = data.get('payloadServer', [])
+    filtered_data = [item for item in payload_server if item['status'] == 1]
+    random_id = random.choice([item['id'] for item in filtered_data])
+    url = f'https://{random_id}.vercel.app/api/blum'
+    payload = {
+        'game_id': game_id,
+        'points': points,
+        'dogs': dogs
+    }
+    response = requests.post(url, json=payload)
+    if response is not None:
+        data = response.json()
+        if "payload" in data:
+            return data["payload"]
+    return None
+
+def get_data_payload():
+    url = 'https://raw.githubusercontent.com/zuydd/database/main/blum.json'
+    data = requests.get(url=url)
+    return data.json()
+
+def claim_game(token, game_id, points, dogs, user_agent=None):
+    url = "https://game-domain.blum.codes/api/v2/game/claim"
     headers = get_headers(token, user_agent)
-    body = {"gameId": game_id, "points": points}
+    payload = create_payload(game_id, points, dogs)
+    if payload is None:
+        log_error("Failed to create payload for claiming game.")
+        return 0
+    body = {'payload': payload}
     max_retries = 3
     for attempt in range(max_retries):
         try:
@@ -412,9 +446,42 @@ def single_line_progress_bar(duration, message):
         time.sleep(duration / 100)
     print(f"\r{message}" + " " * (bar_length + 10), end='\r')  # Clear line with message
 
-def auto_play_game(token, user_agent=None):
-    # This function is disabled.
-    print(f"{Fore.YELLOW + Style.BRIGHT}Note: Game play disabled.{Style.RESET_ALL}")
+def auto_play_game(token, user_agent=None, game_points_min=131, game_points_max=210):
+    total_reward = 0
+    play_time = 32  # Play for 32 seconds
+
+    while True:
+        current_balance, play_passes = new_balance(token, user_agent=user_agent)
+        if current_balance is None or play_passes is None:
+            log_error("Failed to retrieve balance or play passes.")
+            break
+
+        if play_passes == 0:
+            print(f"{Fore.RED + Style.BRIGHT}°Pass : 0, moving to next process.{Style.RESET_ALL}")
+            print(f"{Fore.GREEN + Style.BRIGHT}Total Reward: {total_reward}{Style.RESET_ALL}")
+            break  # Skip to next process if no play passes
+
+        print(f"{Fore.YELLOW + Style.BRIGHT}Playing Game.....°Pass: {play_passes}{Style.RESET_ALL}")
+        
+        game_id = play_game(token, user_agent=user_agent)
+        if game_id:
+            # Replace the live timer display with a progress bar
+            single_line_progress_bar(play_time, f"{Fore.GREEN + Style.BRIGHT}Game play completed!{Style.RESET_ALL}")
+
+            points = random.randint(game_points_min, game_points_max)
+            dogs = random.randint(25, 30) * 5  # Assuming dogs is a random value similar to points
+            reward = claim_game(token, game_id, points, dogs, user_agent=user_agent)
+            total_reward += reward
+            
+            # Show claimed points after game ends
+            print(f"{Fore.GREEN + Style.BRIGHT}Successfully claimed {points} points [✓]{Style.RESET_ALL}")
+
+            # Wait 3 to 7 seconds before starting a new game play
+            wait_time = random.randint(3, 7)
+            for remaining in range(wait_time, 0, -1):
+                print(f"{Fore.CYAN + Style.BRIGHT}Waiting...⌛ {remaining} seconds{Style.RESET_ALL}", end='\r')
+                time.sleep(1)
+            print(' ' * 40, end='\r')
 
 def art():
     print(Fore.GREEN + Style.BRIGHT + r"""
@@ -459,7 +526,8 @@ def main():
         new_task_names = {line.strip() for line in new_task_file}
 
     # Default game points
-    game_points_min, game_points_max = load_game_points()
+    game_points_min = 131
+    game_points_max = 210
 
     while True:
         total_balance = 0.0
@@ -507,17 +575,17 @@ def main():
 
             continue
 
-        if user_choice == '1':
-            # Ask whether to include auto game play right after choosing option 1
-            include_auto_play = input("Include auto game play? (y/n): ").strip().lower() == 'y'
-
         start_account = input("Enter the Account no to start the process from: ").strip()
+        end_account = input("Enter the Account no to end the process at: ").strip()
+
         try:
             start_account = int(start_account) - 1
+            end_account = int(end_account)
         except ValueError:
             start_account = 0
+            end_account = len(query_ids)
 
-        for index in range(start_account, len(query_ids)):
+        for index in range(start_account, min(end_account, len(query_ids))):
             query_id = query_ids[index]
 
             if not query_id:
@@ -554,7 +622,7 @@ def main():
             try:
                 # Perform daily check-in at the beginning of all options
                 if not check_daily_reward_time():
-                    print(f"{Fore.YELLOW + Style.BRIGHT}Daily check-in will work after 5:30 AM UTC.{Style.RESET_ALL}")
+                    print(f"{Fore.YELLOW + Style.BRIGHT}Daily check-in will work after 11:00 AM.{Style.RESET_ALL}")
                 else:
                     if get_daily_reward(token, user_agent=user_agent):
                         countdown_timer(random.randint(2, 3))
@@ -568,20 +636,13 @@ def main():
                     exclude_set = exclude_task_names_option1.union(new_task_names)
                     process_all_tasks(token, exclude_task_names=exclude_set, user_agent=user_agent)
 
-                    # Automatically continue with Options 4, 5, and optionally 3
-                    process_tasks_by_id(token, task_ids_for_earn_checking_social, user_agent=user_agent)
-                    process_new_tasks_only(token, user_agent, new_task_names)
-                    
-                    if include_auto_play:
-                        auto_play_game(token, user_agent=user_agent)
-
                 if user_choice == '2':
                     if claim_farming(token, user_agent=user_agent):
                         countdown_timer(random.randint(2, 3))
                     start_farming(token, user_agent=user_agent)
 
                 if user_choice == '3':  # Auto Play Game Logic
-                    print(f"{Fore.YELLOW + Style.BRIGHT}Note: Game play disabled.{Style.RESET_ALL}")
+                    auto_play_game(token, user_agent=user_agent, game_points_min=game_points_min, game_points_max=game_points_max)
 
                 if user_choice == '4':  # Earn for Checking Social Tasks
                     process_tasks_by_id(token, task_ids_for_earn_checking_social, user_agent=user_agent)
@@ -600,9 +661,8 @@ def main():
                 if updated_balance is not None:
                     total_balance += float(updated_balance or 0)
 
-                # Wait for 3-5 seconds with a live timer before processing the next account
-                random_wait_time = random.randint(3, 5)
-                countdown_timer(random_wait_time)
+                # Wait for 3-5 seconds before processing the next account
+                live_timer(random.randint(3, 5))
 
                 # Add a blank line after processing each account
                 print()
@@ -610,16 +670,6 @@ def main():
         print(f"{Fore.YELLOW + Style.BRIGHT}Total Balance of all accounts: {total_balance}{Style.RESET_ALL}")
 
         clear_token_file('token.txt')
-
-        if user_choice in ['1', '2']:
-            # Add random live timer for next cycle
-            wait_hours = random.uniform(8.5, 9)  # Random wait between 8.5 to 9 hours
-            wait_seconds = int(wait_hours * 3600)
-            hours, remainder = divmod(wait_seconds, 3600)
-            minutes, _ = divmod(remainder, 60)
-
-            print(f"{Fore.YELLOW + Style.BRIGHT}Waiting for {hours} hours and {minutes} minutes before the next cycle...{Style.RESET_ALL}")
-            countdown_timer(wait_seconds)
 
 def process_tasks_by_id(token, task_ids, user_agent=None):
     try:
@@ -639,7 +689,7 @@ def process_tasks_by_id(token, task_ids, user_agent=None):
                         if task_id in task_ids and task_id not in processed_ids:
                             task_status = sub_task["status"]
                             if start_and_claim_task(token, task_id, task_status, user_agent):
-                                random_delay = random.randint(2, 3)
+                                random_delay = random.randint(3, 5)
                                 countdown_timer(random_delay)
                             processed_ids.add(task_id)
     except Exception as e:
