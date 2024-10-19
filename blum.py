@@ -242,10 +242,9 @@ def process_all_tasks(token, exclude_task_names, user_agent=None):
                         task_name = sub_task["title"]
                         if task_name not in exclude_task_names and task_id not in processed_ids:
                             task_status = sub_task["status"]
-                            process_task(token, task_id, task_name, task_status, {}, user_agent, False)
+                            if process_task(token, task_id, task_name, task_status, {}, user_agent, False):
+                                countdown_timer(random.randint(2, 3))
                             processed_ids.add(task_id)
-                            # Add a random timer of 2-3 seconds after each claim
-                            countdown_timer(random.randint(2, 3))
     except Exception as e:
         log_error(f"Error processing all tasks: {e}")
 
@@ -267,7 +266,7 @@ def get_task_keywords(task_name_file, keyword_file):
 def process_task(token, task_id, task_name, task_status, task_keywords, user_agent=None, is_validation_required=False):
     if task_status == "FINISHED":
         print(f"{Fore.RED + Style.BRIGHT}{task_name}: Already completed!{Style.RESET_ALL}")
-        return
+        return False
     elif task_status == "NOT_STARTED":
         start_task(token, task_id, user_agent)
         task_status = "READY_FOR_VERIFY"  # Silently start the task if not started
@@ -275,11 +274,14 @@ def process_task(token, task_id, task_name, task_status, task_keywords, user_age
         claim_status = claim_task(token=token, task_id=task_id, user_agent=user_agent)
         if claim_status == "FINISHED":
             print(f"{Fore.GREEN + Style.BRIGHT}{task_name}: Successfully claimed!{Style.RESET_ALL}")
+            return True
     elif task_status == "READY_FOR_VERIFY":
         keyword = task_keywords.get(task_name)
         if is_validation_required and keyword:
             if validate_task(token, task_id, keyword, user_agent):
                 print(f"{Fore.GREEN + Style.BRIGHT}{task_name}: Successfully claimed!{Style.RESET_ALL}")
+                return True
+    return False
 
 def start_task(token, task_id, user_agent=None):
     url = f"https://earn-domain.blum.codes/api/v1/tasks/{task_id}/start"
@@ -457,9 +459,16 @@ def auto_play_game(token, user_agent=None, game_points_min=131, game_points_max=
     play_time = 32  # Play for 32 seconds
 
     while True:
-        current_balance, play_passes = new_balance(token, user_agent=user_agent)
+        # Retry mechanism for fetching play passes
+        current_balance, play_passes = None, None
+        for _ in range(3):  # Retry up to 3 times
+            current_balance, play_passes = new_balance(token, user_agent=user_agent)
+            if current_balance is not None and play_passes is not None:
+                break
+            time.sleep(2)  # Wait before retrying
+
         if current_balance is None or play_passes is None:
-            log_error("Failed to retrieve balance or play passes.")
+            log_error("Failed to retrieve balance or play passes after 3 attempts.")
             break
 
         if play_passes == 0:
