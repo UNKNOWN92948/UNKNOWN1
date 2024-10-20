@@ -508,7 +508,7 @@ def art():
  \_| |_/ \__,_| \___||_|\_\ \___||_| 
     """ + Style.RESET_ALL)
 
-    print(Fore.CYAN + Style.BRIGHT + "Blum Script Edited by @Dhiraj_9619 💫 DHEERAJ" + Style.RESET_ALL)
+    print(Fore.CYAN + Style.BRIGHT + "Blum Script Created by @Dhiraj_9619 💫 DHEERAJ" + Style.RESET_ALL)
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)  # Handle Ctrl+C to exit gracefully
