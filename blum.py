@@ -51,29 +51,30 @@ def save_approved_key(user_key):
     except Exception as e:
         log_error(f"Error saving approved key: {e}")
 
-def ask_for_key():
-    # Load any saved approved key from the file
-    saved_keys = load_approved_keys()
+def load_saved_key():
+    try:
+        with open(APPROVED_KEYS_FILE, "r") as file:
+            return file.readline().strip()
+    except FileNotFoundError:
+        return None
 
-    # Fetch the latest keys from the GitHub URL
+def ask_for_key():
+    saved_key = load_saved_key()
     keys = fetch_keys()
 
-    # Validate the saved key(s)
-    for saved_key in saved_keys:
-        if validate_key(saved_key, keys):
-            print(f"{Fore.GREEN + Style.BRIGHT}Saved key is still valid!{Style.RESET_ALL}")
-            return saved_key
+    if saved_key and validate_key(saved_key, keys):
+        print(f"{Fore.GREEN + Style.BRIGHT}Saved key is already approved!{Style.RESET_ALL}")
+        return saved_key
 
-    # If no valid saved key is found, prompt the user for a new key
-    while True:
-        user_key = input("Enter your key: ").strip()
-        if validate_key(user_key, keys):
-            save_approved_key(user_key)
-            print(f"{Fore.GREEN + Style.BRIGHT}Key approved!{Style.RESET_ALL}")
-            return user_key
-        else:
-            print(f"{Fore.RED + Style.BRIGHT}Invalid key. Please try again.{Style.RESET_ALL}")
-            
+    user_key = input("Enter your key: ").strip()
+    if validate_key(user_key, keys):
+        save_approved_key(user_key)
+        print(f"{Fore.GREEN + Style.BRIGHT}Key approved!{Style.RESET_ALL}")
+        return user_key
+    else:
+        print(f"{Fore.RED + Style.BRIGHT}Invalid key. Exiting...{Style.RESET_ALL}")
+        sys.exit(1)
+
 def save_fake_data(fake_data):
     with open(FAKE_DATA_FILE, 'w') as file:
         json.dump(fake_data, file)
