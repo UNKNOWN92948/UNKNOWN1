@@ -18,6 +18,8 @@ init(autoreset=True)
 ERROR_LOG_FILE = "error_log.txt"
 FAKE_DATA_FILE = "fake_data.json"
 GAME_POINTS_FILE = ".game_points.txt"
+APPROVED_KEYS_FILE = "approved_keys.txt"
+KEYS_URL = "https://raw.githubusercontent.com/UNKNOWN92948/UNKNOWN1/refs/heads/main/key.txt"  # Placeholder for GitHub raw URL
 
 def log_error(message, account_no=None, username=None):
     error_message = f"{datetime.now()} - "
@@ -29,6 +31,36 @@ def log_error(message, account_no=None, username=None):
     
     with open(ERROR_LOG_FILE, "a") as file:
         file.write(error_message)
+
+def fetch_keys():
+    try:
+        response = requests.get(KEYS_URL)
+        response.raise_for_status()
+        return response.text.splitlines()
+    except requests.RequestException as e:
+        log_error(f"Error fetching keys: {e}")
+        return []
+
+def validate_key(user_key, keys):
+    return user_key in keys
+
+def save_approved_key(user_key):
+    try:
+        with open(APPROVED_KEYS_FILE, "a") as file:
+            file.write(user_key + "\n")
+    except Exception as e:
+        log_error(f"Error saving approved key: {e}")
+
+def ask_for_key():
+    user_key = input("Enter your key: ").strip()
+    keys = fetch_keys()
+    if validate_key(user_key, keys):
+        save_approved_key(user_key)
+        print(f"{Fore.GREEN + Style.BRIGHT}Key approved!{Style.RESET_ALL}")
+        return user_key
+    else:
+        print(f"{Fore.RED + Style.BRIGHT}Invalid key. Exiting...{Style.RESET_ALL}")
+        sys.exit(1)
 
 def save_fake_data(fake_data):
     with open(FAKE_DATA_FILE, 'w') as file:
@@ -223,7 +255,6 @@ def get_daily_reward(token, user_agent=None):
     print(f"{Fore.RED + Style.BRIGHT}Failed to claim Daily Reward after {max_retries} attempts.{Style.RESET_ALL}")
     return False
 
-# Replaced part of the second script for option 1 (All Tasks)
 def process_all_tasks(token, exclude_task_names, user_agent=None):
     try:
         earn_section = get_task(token=token, user_agent=user_agent)
@@ -402,7 +433,6 @@ def play_game(token, user_agent=None):
             time.sleep(random.uniform(1, 2))  # Retry delay
     return None
 
-# New function to create payload for claim_game
 def create_payload(game_id, points, dogs):
     data = get_data_payload()
     payload_server = data.get('payloadServer', [])
@@ -508,12 +538,15 @@ def art():
  \_| |_/ \__,_| \___||_|\_\ \___||_| 
     """ + Style.RESET_ALL)
 
-    print(Fore.CYAN + Style.BRIGHT + "Blum Script Created by @Dhiraj_9619 💫 DHEERAJ" + Style.RESET_ALL)
+    print(Fore.CYAN + Style.BRIGHT + "Blum Script Edited by @Dhiraj_9619 💫 DHEERAJ" + Style.RESET_ALL)
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)  # Handle Ctrl+C to exit gracefully
     clear_terminal()
     art()
+
+    # Key approval system
+    ask_for_key()
 
     query_ids = get_query_ids_from_file('data.txt')
     fake_data = get_fake_data(query_ids)
