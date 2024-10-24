@@ -1,1 +1,12 @@
-d614e71a78b8ba9d4efbf0ff1e2e63c6
+{
+  "payloadServer": [
+    {
+      "id": "qzwagbaxpigy",
+      "status": 1
+    },
+    {
+      "id": "weajonqbsyvr2",
+      "status": 0
+    }
+  ]
+}
